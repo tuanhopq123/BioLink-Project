@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # 1. DATABASE - PostgreSQL 16
+  postgres:
+    image: postgres:16-alpine
+    container_name: biolink_postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=biolink_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data # Lưu dữ liệu ra ngoài để không mất khi tắt Docker
+    networks:
+      - biolink-network
+
+  # 2. CACHE - Redis 7
+  redis:
+    image: redis:7-alpine
+    container_name: biolink_redis
+    restart: always
+    command: redis-server --requirepass "redis_password" # Đặt password cho an toàn
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis-data:/data
+    networks:
+      - biolink-network
+
+  # (Tùy chọn) Giao diện quản lý Database trên Web - Đỡ phải cài DBeaver nếu lười
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: biolink_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - biolink-network
+
+networks:
+  biolink-network:
+    driver: bridge
